@@ -15,7 +15,34 @@ CRITICAL: requests without a browser User-Agent get 503. Always send one:
 curl -s -A 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36' ...
 ```
 
-## Discovery — table/cube metadata
+## Discovery — browse the cube inventory first
+
+When a user browses StatCan in natural language ("what tables exist about
+X", "how many CPI tables are there", "is this table still active"), always
+start with `GET getAllCubesList` before any other WDS call. It is WDS's
+metadata equivalent of the Open Canada catalog search: one GET returns the
+entire inventory (8,271 cubes on 2026-09-27) — productId, cansimId,
+bilingual titles, cube start/end dates, release time, terminated flag,
+frequencyCode, subject/survey codes, and dimension names. WDS has no
+full-text search endpoint, so filtering this list is the only way to browse.
+
+```sql
+-- Entire inventory, queried in place with DuckDB (httpfs required).
+-- duckdb's default User-Agent is accepted; curl needs the browser UA above.
+SELECT productId, cansimId, cubeTitleEn, frequencyCode, archived
+FROM read_json_auto('https://www150.statcan.gc.ca/t1/wds/rest/getAllCubesList')
+WHERE cubeTitleEn ILIKE '%consumer price index%'
+ORDER BY productId;
+```
+
+Codes decode via getCodeSets: `archived` 0 = active, 1 = terminated
+(terminated cubes are still served, but frozen); `frequencyCode` 6 = monthly.
+The catalog ↔ cube bridge: every productId here is a WDS cube, and catalog
+datasets whose resource URLs carry a table number resolve to one of these;
+catalog products without a table number (publications, maps) have no cube
+counterpart.
+
+## Cube metadata — dimensions and member IDs
 
 ```bash
 # Cube metadata: dimensions + all member IDs + titles (POST, array body)
@@ -35,10 +62,12 @@ Other discovery calls:
 
 - `GET getChangedCubeList/{YYYY-MM-DD}` → cubes released that day
   (past dates only; future dates return 409 "The product is not released yet").
-- `GET getCodeSets` → scalar factors, frequencies, symbols, statuses.
-- Note: WDS has no dataset full-text search. To find a table number, search
-  statcan.gc.ca or the Open Canada catalog (open-canada-catalog skill), then
-  use its productId here.
+- `GET getCodeSets` → scalar factors, frequencies, symbols, statuses; also
+  decodes the `archived` and `frequencyCode` columns of getAllCubesList.
+- Note: getAllCubesList covers tables only. For non-table StatCan products
+  (publications, maps) or other departments' datasets, browse the Open Canada
+  catalog (open-canada-catalog skill); its StatCan resource URLs carry the
+  table number, which bridges to a productId here.
 
 ## Coordinates — how to address a data point
 
