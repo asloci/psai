@@ -39,12 +39,20 @@ curl -s 'https://open.canada.ca/data/en/api/3/action/package_search?q=PSES&rows=
 Useful variants (all verified):
 
 - `q=` free text (supports quoted phrases). `rows=` page size, `start=` offset.
-- `fq=organization:<org-slug>` filters by department (e.g. `tbs-sct` → 314 datasets).
+- `fq=organization:<org-slug>` filters by department (e.g. `tbs-sct` → 314 datasets; StatCan's slug is `statcan`).
 - `sort=metadata_modified+desc` sorts by last update.
 - `package_show?id=<dataset-id>` → full metadata record for one dataset, including every resource (name, format, language, direct URL).
 - `organization_list` → all ~350 department slugs.
 - `package_list` → IDs of all ~48,000 datasets (rarely needed; prefer search).
 - `recently_changed_packages_activity_list` → recently updated datasets.
+
+Search tips (verified):
+
+- The search is literal text, not semantic: "CPI Ontario" returns 0 for
+  StatCan because titles spell out "Consumer Price Index". Prefer spelled-out
+  terms; try synonyms if a count is 0 before concluding nothing exists.
+- To answer "how many datasets are there about X" with zero data transfer, use
+  `rows=0` — `result.count` returns the total match count on its own.
 
 Response shape: `{success, result: {count, results: [...]}}`. Each result carries
 `title_translated.en/fr`, `organization`, `notes_translated.en/fr`,
@@ -54,6 +62,10 @@ Always check `.success == true`.
 
 Present catalog answers as: dataset title, department, last modified, and the
 resource list (format + URL). Do not fetch resource URLs during discovery.
+
+Bridge to StatCan WDS: StatCan datasets' resource URLs contain the table number
+(e.g. `.../tbl/csv/15100011-eng.zip` → productId 15100011). Use the catalog to
+find what exists, then the statcan-wds skill for cube metadata and data.
 
 ## Step 2 — Retrieve: query the catalog JSON itself with DuckDB
 
@@ -115,7 +127,9 @@ Guardrails for live file queries:
 
 When answering a question about catalogued data: cite the dataset title,
 department, dataset ID (or open.canada.ca URL `/data/en/dataset/<id>`), and the
-exact resource URL the numbers came from. If a chosen resource is not in a
+exact resource URL the numbers came from. State the extraction date (EU
+publications-guide format: author, title, version, publisher, date, date of
+extraction, persistent identifier). If a chosen resource is not in a
 directly queryable format, say so and offer the download step instead of
 approximating.
 
