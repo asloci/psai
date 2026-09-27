@@ -15,6 +15,28 @@ CRITICAL: requests without a browser User-Agent get 503. Always send one:
 curl -s -A 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36' ...
 ```
 
+## Standing rules (read on load)
+
+- Everything runs live over the network against the WDS API. Browsing
+  (getAllCubesList), cube metadata, and data-point lookups fetch metadata
+  and small point payloads only — nothing is downloaded or stored unless
+  the user asks. Full-table ZIP downloads run only on explicit request.
+- Queryability depends on format. Without a download, WDS serves point
+  lookups only (a series' latest values, latest N periods, ranges).
+  Aggregate analysis requires data that is DuckDB-readable in place — flat
+  CSV/TSV/JSON over https, or Parquet on object stores — and StatCan full
+  tables are ZIP-only, so they always need an explicit download-and-ingest
+  step first. State which case applies before answering; never approximate
+  when the format forbids the query.
+- After every discover → retrieve → synthesize loop, end the answer by
+  offering the query trail: the SQL/curl statements that produced the
+  numbers, as a code block or saved to a .sql file in the working repo.
+  Generate and show the code block/file only if the user says yes.
+
+Example prompts:
+- "How many active CPI cubes are there, and which are monthly?"
+- "Pull the latest 6 months of the CPI all-items series for Canada."
+
 ## Discovery — browse the cube inventory first
 
 When a user browses StatCan in natural language ("what tables exist about

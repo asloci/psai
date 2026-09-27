@@ -18,6 +18,10 @@ All patterns below were verified against the live API (2026-09-27).
   file. Discovery (Steps 1-2) fetches catalog metadata only: no dataset
   contents, no resource URLs. Only Step 3, run on explicit request, reads a
   dataset's contents.
+- Queryability depends on the resource: catalog metadata is always
+  analyzable, but data contents only when DuckDB-readable in place (flat
+  CSV/TSV/JSON over https, Parquet on object stores). ZIP, XLSX, and PDF
+  need a download step — say so instead of approximating.
 - After every discover → retrieve → synthesize loop, end the answer by
   offering the query trail: the SQL/curl statements that produced the
   numbers, as a code block or saved to a .sql file in the working repo.
