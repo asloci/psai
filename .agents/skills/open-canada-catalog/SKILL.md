@@ -100,3 +100,12 @@ department, dataset ID (or open.canada.ca URL `/data/en/dataset/<id>`), and the
 exact resource URL the numbers came from. If a chosen resource is not in a
 directly queryable format, say so and offer the download step instead of
 approximating.
+
+Always publish the query trail: include the exact SQL statements (or curl
+commands) that produced the numbers in a fenced code block in the answer, so
+the user can copy, re-run, and audit them. Write them to a `.sql` file in the
+working repo only if the user asks for one.
+
+Label the data plane: Steps 1-2 read catalog metadata only (no dataset
+contents); only Step 3 reads a dataset's contents. State which plane the
+answer came from.
