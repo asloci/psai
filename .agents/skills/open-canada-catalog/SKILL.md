@@ -11,6 +11,24 @@ GET-only RPC Action API. No auth, no POST, parameters in the URL. English base:
 
 All patterns below were verified against the live API (2026-09-27).
 
+## Standing rules (read on load)
+
+- Everything runs live over the network against the CKAN API or, in Step 3, a
+  resource URL — nothing is downloaded or stored unless the user asks for a
+  file. Discovery (Steps 1-2) fetches catalog metadata only: no dataset
+  contents, no resource URLs. Only Step 3, run on explicit request, reads a
+  dataset's contents.
+- After every discover → retrieve → synthesize loop, end the answer by
+  offering the query trail: the SQL/curl statements that produced the
+  numbers, as a code block or saved to a .sql file in the working repo.
+  Generate and show the code block/file only if the user says yes.
+
+Example prompts:
+- "How many datasets are in the Open Canada catalog, by resource format and
+  by department?"
+- "Find the latest PSES dataset, then query its CSV in place for response
+  rate by department."
+
 ## Step 1 — Discover: search the catalog (metadata only, no data download)
 
 ```bash
@@ -101,11 +119,7 @@ exact resource URL the numbers came from. If a chosen resource is not in a
 directly queryable format, say so and offer the download step instead of
 approximating.
 
-Always publish the query trail: include the exact SQL statements (or curl
-commands) that produced the numbers in a fenced code block in the answer, so
-the user can copy, re-run, and audit them. Write them to a `.sql` file in the
-working repo only if the user asks for one.
-
-Label the data plane: Steps 1-2 read catalog metadata only (no dataset
-contents); only Step 3 reads a dataset's contents. State which plane the
-answer came from.
+End every discover → retrieve → synthesize loop by offering the query trail
+(code block or .sql file) as described in the standing rules; do not dump SQL
+unprompted. State the data plane only when Step 3 was used, since that is the
+only step that reads dataset contents.
