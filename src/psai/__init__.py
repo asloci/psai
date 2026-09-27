@@ -1,6 +1,6 @@
 import argparse
 
-from .build_claude import build_claude, install_vibe
+from .plugin_tools import build_claude, install_skills, install_vibe
 
 
 def main() -> None:
@@ -15,7 +15,16 @@ def main() -> None:
     )
     sub.add_parser(
         "install-vibe",
-        help="Install the plugin/ package into ~/.vibe/plugins/ for Mistral Vibe.",
+        help="Install the plugin/ package into ~/.vibe/plugins/ (pinned, not yet usable everywhere).",
+    )
+    p_install = sub.add_parser(
+        "install-skills",
+        help="Install the plugin skills as loose skills into ~/.agents/skills/ (usable now).",
+    )
+    p_install.add_argument(
+        "--project",
+        action="store_true",
+        help="Install into .agents/skills/ in this repo instead of the user directory.",
     )
     args = parser.parse_args()
 
@@ -26,4 +35,9 @@ def main() -> None:
     elif args.command == "install-vibe":
         dest = install_vibe()
         print(f"Installed to {dest}")
-        print("Run /reload inside Vibe to pick it up.")
+        print("Plugins are pinned at session start; restart Vibe to pick it up.")
+    elif args.command == "install-skills":
+        installed = install_skills(project=args.project)
+        for dest in installed:
+            print(f"Installed {dest.name} -> {dest}")
+        print("Run /reload inside Vibe (or restart) to pick them up.")

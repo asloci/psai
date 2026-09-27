@@ -58,10 +58,36 @@ def build_claude() -> Path:
 
 
 def install_vibe() -> Path:
-    """Copy the plugin package into ~/.vibe/plugins/<name>/ for Mistral Vibe."""
+    """Copy the plugin package into ~/.vibe/plugins/<name>/ for Mistral Vibe.
+
+    Vibe pins user plugins at session start; plugin skill registration is not
+    served by all runtime versions yet — use install_skills() for immediate
+    usability.
+    """
     name = _load_manifest()["name"]
     dest = VIBE_PLUGINS_DIR / name
     if dest.exists():
         shutil.rmtree(dest)
     shutil.copytree(PLUGIN_ROOT, dest)
     return dest
+
+
+def install_skills(project: bool = False) -> list[Path]:
+    """Copy each skill from plugin/skills/ into a loose skills directory.
+
+    User scope: ~/.agents/skills/ (available everywhere).
+    Project scope: .agents/skills/ in this repo (available when the repo is
+    opened in a trusted folder).
+    """
+    skills_src = PLUGIN_ROOT / "skills"
+    dest_root = (REPO_ROOT / ".agents" / "skills") if project else (Path.home() / ".agents" / "skills")
+    installed = []
+    for skill_dir in sorted(skills_src.iterdir()):
+        if not skill_dir.is_dir():
+            continue
+        dest = dest_root / skill_dir.name
+        if dest.exists():
+            shutil.rmtree(dest)
+        shutil.copytree(skill_dir, dest)
+        installed.append(dest)
+    return installed

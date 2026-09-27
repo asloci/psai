@@ -25,17 +25,25 @@ re-packaged on the cross-agent plugin standard so any compatible client
 
 ## Install
 
-### Agent Plugins 1.0 clients (Vibe, Codex, Cursor, Copilot, VS Code)
+### Mistral Vibe
 
-For Mistral Vibe (user scope), from this repo:
+Current Vibe versions pin user plugins but do not yet register their skills
+with the model's skill tool, so install the skills loose (the route that
+works today) and optionally pin the plugin for when support lands:
 
 ```
-uv run psai install-vibe
+uv run psai install-skills          # skills -> ~/.agents/skills/ (usable now)
+uv run psai install-skills --project  # or .agents/skills/ inside this repo
+uv run psai install-vibe           # plugin -> ~/.vibe/plugins/ (pinned)
 ```
 
-This copies `plugin/` to `~/.vibe/plugins/gc-data-explorer/`; then `/reload`
-inside Vibe. Skills appear as `gc-data-explorer:<skill-name>`. For other
-clients, copy or point them at the `plugin/` directory.
+Then `/reload` (or restart Vibe). The skill appears as `/open-canada-catalog`
+when installed loose, or `gc_data_explorer:open-canada-catalog` once plugin
+skill registration is supported.
+
+### Other Agent Plugins 1.0 clients (Codex, Cursor, Copilot, VS Code)
+
+Copy or point the client at the `plugin/` directory.
 
 ### Claude Code
 
