@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "gc-data-explorer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Government of Canada Data Explorer: browse, search, and query Canadian open data portals in place with DuckDB — no downloads, no ingestion. Covers the Open Canada (CKAN) catalog today, with StatCan and provincial portals to come.",
   "author": {
     "name": "AS",

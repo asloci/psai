@@ -16,7 +16,8 @@ psai/
 ├── plugin/                  # the Agent Plugins 1.0 package (this README's subject)
 │   ├── plugin.json          # manifest — the only source of truth
 │   └── skills/              # one directory per portal skill
-│       └── open-canada-catalog/SKILL.md
+│       ├── open-canada-catalog/SKILL.md
+│       └── statcan-wds/SKILL.md
 ├── src/psai/                # Python tooling: build/install commands
 └── dist/                    # generated output (gitignored)
 ```
@@ -78,6 +79,17 @@ resource in place with DuckDB.
 /gc-data-explorer:open-canada-catalog list CSV resources from tbs-sct updated in the last year
 ```
 
+### `statcan-wds`
+Query Statistics Canada's Web Data Service API live — browse cube/table
+metadata and dimensions, fetch time-series data points by coordinate or
+vector ID, and get full-table CSV download URLs. Requires a browser
+User-Agent header (503 otherwise).
+
+```
+/gc-data-explorer:statcan-wds what is the latest CPI all-items value for Canada?
+/gc-data-explorer:statcan-wds show metadata for table 18-10-0004-01
+```
+
 ## How the skills work together
 
 Every skill in this package follows the same three-step flow: **discover**
@@ -101,7 +113,7 @@ download step or the `convert-file` skill.
 ## Roadmap
 
 - `open-canada-catalog` — Open Canada (CKAN) — shipped
-- StatCan tables and zipped CSV releases
+- `statcan-wds` — StatCan Web Data Service — shipped
 - Provincial portals (Ontario, Quebec, BC) — also CKAN-family, same API shape
 - Proactive disclosure / contracting datasets
 
