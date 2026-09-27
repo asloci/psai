@@ -5,6 +5,9 @@ Canadian open data portals in place with [DuckDB](https://duckdb.org) —
 browse catalog metadata, then query chosen tabular resources directly over
 https, with no downloads and no ingestion pipeline.
 
+Status: work in progress. One skill is shipped and its patterns are verified
+against the live catalog; more portals are coming (see Roadmap).
+
 The repository is a monorepo for the competition solution; the plugin itself
 is self-contained under `plugin/`:
 
@@ -102,8 +105,38 @@ download step or the `convert-file` skill.
 - Provincial portals (Ontario, Quebec, BC) — also CKAN-family, same API shape
 - Proactive disclosure / contracting datasets
 
-## Prerequisites
+## Platform support and prerequisites
 
-DuckDB CLI must be installed (`duckdb --version`). Remote reads need the
-`httpfs` extension (`INSTALL httpfs; LOAD httpfs;`). The build tooling
-requires [uv](https://docs.astral.sh/uv/).
+The skills run inside an agentic coding tool on a **desktop OS — macOS,
+Windows, or Linux — with the DuckDB CLI installed.** They do not run on
+mobile devices (iOS/Android): there is no agent runtime and no DuckDB CLI
+there. A phone can read this repo, but it cannot execute the skills.
+
+- DuckDB CLI (`duckdb --version`): `brew install duckdb` (macOS),
+  `winget install DuckDB.cli` (Windows), or the single-file download from
+  duckdb.org (Linux). One static binary — no server, no account.
+- `httpfs` extension: recent DuckDB auto-installs and auto-loads it on the
+  first https read; manual fallback is `INSTALL httpfs; LOAD httpfs;`.
+- [uv](https://docs.astral.sh/uv/) — only for this repo's tooling
+  (`build-claude`, `install-skills`), not for using the skills themselves.
+
+## How a question becomes SQL, then facts
+
+A skill is instructions, not code. When you ask a question:
+
+1. The agent loads `SKILL.md` — a briefing on the portal's API endpoints,
+   response shapes, and DuckDB idioms.
+2. The agent composes SQL from those documented patterns (model-authored;
+   there are no fixed query templates) and runs it locally. DuckDB with
+   httpfs fetches the JSON/CSV over https; the catalog's API does the
+   counting server-side.
+3. The raw tables come back as tool output, and the agent writes the prose
+   answer around them.
+
+Reproducibility: the **facts are deterministic** — counts come from the
+catalog API, so any correct query path converges on the same numbers for the
+same point in time (the catalog itself changes daily). The **SQL text and
+prose are not**: another user, agent, or model should reach the same facts
+by a different route, with different queries and different wording. The
+skill constrains the approach (metadata-only discovery, no downloads, query
+in place with DuckDB), not the literal SQL.
