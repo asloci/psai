@@ -76,6 +76,37 @@ Other retrieval methods (same shapes): `getBulkVectorDataByRange`,
 `getDataFromVectorByReferencePeriodRange`, `getChangedSeriesDataFromVector`,
 `getChangedSeriesDataFromCubePidCoord`.
 
+## Joins and cross-cube use
+
+WDS has no cross-table query, and CKAN has no join semantics. Joins happen
+after ingestion, in DuckDB/DuckLake — never live at the API layer.
+
+Within one cube, no join is ever needed: a coordinate is already the full
+dimensional address (e.g. Geography × Product × period). Most questions stop
+at one cube, one coordinate, one vector.
+
+Across cubes, two join patterns cover nearly all StatCan cases:
+
+1. REF_DATE + geography (DGUID). Nearly every cube has REF_DATE and a
+   Geography dimension; DGUIDs are StatCan's persistent geographic
+   identifiers, stable across cubes and vintages. Example: CPI Ontario joins
+   LFS Ontario on (REF_DATE, DGUID).
+2. Shared classification codes (NAICS, product codes, SGC). Only when both
+   cubes genuinely carry the same classification dimension — verify in
+   getCubeMetadata before assuming.
+
+Rules for cross-cube work:
+
+- Design joins at curation time, in a join-key registry
+  (`{key_name, table_name, column_name, notes}` — hand-populated), never
+  invent them at query time. A model that guesses a join key is guessing a
+  semantic fact — the failure mode the whole architecture exists to prevent.
+- Before joining two ingested tables, check both cubes' metadata for the
+  geography vintage / classification vintage: Ontario DGUIDs or NAICS
+  versions can differ between tables released in different years.
+- When in doubt, refuse the join and report that the two cubes share no
+  verified key. That is a correct answer.
+
 ## Full table download (for DuckDB ingestion)
 
 ```bash
@@ -103,6 +134,7 @@ DuckDB/DuckLake.
   questions; use full-table only for ingestion.
 - Values carry `decimals` and `scalarFactorCode` — apply them when presenting
   numbers (getCodeSets decodes them).
+- Never join across cubes on guessed keys — see Joins and cross-cube use.
 
 ## Synthesize
 
