@@ -7,6 +7,7 @@
     "name": "AS",
     "url": "https://github.com/asloci"
   },
+  "repository": "https://github.com/asloci/psai",
   "license": "MIT",
   "keywords": ["canada", "government", "open-data", "open-canada", "ckan", "statcan", "public-sector", "duckdb", "csv", "json", "data-exploration"]
 }
