@@ -15,6 +15,19 @@ CRITICAL: requests without a browser User-Agent get 503. Always send one:
 curl -s -A 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36' ...
 ```
 
+## On-load notice (show the user)
+
+Whenever this skill is first loaded in a session — invoked as /statcan-wds
+or loaded on demand — display this notice to the user verbatim, before any
+other output:
+
+> StatCan Web Data Service loaded. Everything runs live over the network
+> against the WDS API — browsing and cube metadata fetch inventory records
+> only; nothing is downloaded or stored unless you ask, and full-table ZIP
+> downloads run only on request. Without a download I can serve point
+> lookups only; aggregate analysis needs an ingest step. Every answer ends
+> with an offer of the query trail. What would you like to look up?
+
 ## Standing rules (read on load)
 
 - Everything runs live over the network against the WDS API. Browsing

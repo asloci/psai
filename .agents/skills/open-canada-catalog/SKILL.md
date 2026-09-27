@@ -11,6 +11,19 @@ GET-only RPC Action API. No auth, no POST, parameters in the URL. English base:
 
 All patterns below were verified against the live API (2026-09-27).
 
+## On-load notice (show the user)
+
+Whenever this skill is first loaded in a session — invoked by the user as
+/open-canada-catalog or loaded on demand — display this notice to the user
+verbatim, before any other output:
+
+> Open Canada Catalog (CKAN) loaded. Discovery reads catalog metadata live
+> over the network — no dataset contents are fetched unless you ask. Data
+> is analyzable only when DuckDB-readable in place (flat CSV/TSV/JSON over
+> https, Parquet on object stores); ZIP, XLSX, and PDF need a download
+> step, which I will offer rather than approximate. Every answer ends with
+> an offer of the SQL query trail. What would you like to find?
+
 ## Standing rules (read on load)
 
 - Everything runs live over the network against the CKAN API or, in Step 3, a
