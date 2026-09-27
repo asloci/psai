@@ -5,23 +5,37 @@ Canadian open data portals in place with [DuckDB](https://duckdb.org) —
 browse catalog metadata, then query chosen tabular resources directly over
 https, with no downloads and no ingestion pipeline.
 
-One portable `plugin.json` at the root; one directory per portal skill under
-`skills/`. The layout is inspired by
-[duckdb-skills](https://github.com/duckdb/duckdb-skills), re-packaged on the
-cross-agent plugin standard so any compatible client (Vibe, Codex, Cursor,
-GitHub Copilot, VS Code, ...) loads the same folder.
+The repository is a monorepo for the competition solution; the plugin itself
+is self-contained under `plugin/`:
+
+```
+psai/
+├── plugin/                  # the Agent Plugins 1.0 package (this README's subject)
+│   ├── plugin.json          # manifest — the only source of truth
+│   └── skills/              # one directory per portal skill
+│       └── open-canada-catalog/SKILL.md
+├── src/psai/                # Python tooling: build/install commands
+└── dist/                    # generated output (gitignored)
+```
+
+New portal skills are added as `plugin/skills/<portal-slug>/SKILL.md`. The
+layout is inspired by [duckdb-skills](https://github.com/duckdb/duckdb-skills),
+re-packaged on the cross-agent plugin standard so any compatible client
+(Vibe, Codex, Cursor, GitHub Copilot, VS Code, ...) loads the same folder.
 
 ## Install
 
 ### Agent Plugins 1.0 clients (Vibe, Codex, Cursor, Copilot, VS Code)
 
-Clone into the client's plugin directory. For Mistral Vibe (user scope):
+For Mistral Vibe (user scope), from this repo:
 
 ```
-git clone <repo-url> ~/.vibe/plugins/gc-data-explorer
+uv run psai install-vibe
 ```
 
-then `/reload` inside Vibe. Skills appear as `gc-data-explorer:<skill-name>`.
+This copies `plugin/` to `~/.vibe/plugins/gc-data-explorer/`; then `/reload`
+inside Vibe. Skills appear as `gc-data-explorer:<skill-name>`. For other
+clients, copy or point them at the `plugin/` directory.
 
 ### Claude Code
 

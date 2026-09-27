@@ -1,20 +1,26 @@
-"""Generate a Claude Code plugin from the Agent Plugins 1.0 source."""
+"""Build and install tooling for the gc-data-explorer Agent Plugins 1.0 package."""
 
 import json
 import shutil
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+PLUGIN_ROOT = REPO_ROOT / "plugin"
+VIBE_PLUGINS_DIR = Path.home() / ".vibe" / "plugins"
+
+
+def _load_manifest() -> dict:
+    return json.loads((PLUGIN_ROOT / "plugin.json").read_text(encoding="utf-8"))
 
 
 def build_claude() -> Path:
-    """Translate the root Agent Plugins 1.0 manifest into a Claude Code
-    plugin under dist/claude/<name>/ and copy the skills tree.
+    """Translate the Agent Plugins 1.0 package into a Claude Code plugin
+    under dist/claude/<name>/ and copy the skills tree.
 
     The output is a self-contained plugin: .claude-plugin/plugin.json,
     .claude-plugin/marketplace.json, and skills/.
     """
-    src_manifest = json.loads((REPO_ROOT / "plugin.json").read_text(encoding="utf-8"))
+    src_manifest = _load_manifest()
     name = src_manifest["name"]
     author = src_manifest.get("author", {})
 
@@ -47,5 +53,15 @@ def build_claude() -> Path:
         json.dumps(marketplace, indent=2) + "\n", encoding="utf-8"
     )
 
-    shutil.copytree(REPO_ROOT / "skills", out / "skills")
+    shutil.copytree(PLUGIN_ROOT / "skills", out / "skills")
     return out
+
+
+def install_vibe() -> Path:
+    """Copy the plugin package into ~/.vibe/plugins/<name>/ for Mistral Vibe."""
+    name = _load_manifest()["name"]
+    dest = VIBE_PLUGINS_DIR / name
+    if dest.exists():
+        shutil.rmtree(dest)
+    shutil.copytree(PLUGIN_ROOT, dest)
+    return dest
