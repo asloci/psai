@@ -1,154 +1,62 @@
 # Government of Canada Data Explorer
 
-An [Agent Plugins 1.0](https://agent-plugins.org) package for exploring
-Canadian open data portals in place with [DuckDB](https://duckdb.org) —
-browse catalog metadata, then query chosen tabular resources directly over
-https, with no downloads and no ingestion pipeline.
+Natural-language front desk for Government of Canada data. Two agent skills
+let you browse catalog metadata live — what datasets, cubes, and resources
+exist — and query anything DuckDB-readable in place over https: no
+downloads, no ingestion pipeline, no API keys. Resources that cannot be
+queried in place (ZIP, XLSX, PDF, SHP) are stated as such rather than
+approximated.
 
-Status: work in progress. One skill is shipped and its patterns are verified
-against the live catalog; more portals are coming (see Roadmap).
+- `open-canada-catalog` — the Open Canada (CKAN) catalog: search ~48,000
+  datasets across 350+ departments, then query chosen CSV/JSON resources
+  in place.
+- `statcan-wds` — Statistics Canada's Web Data Service: browse the full
+  cube inventory, fetch time-series points by coordinate or vector ID,
+  and get full-table CSV download URLs for ingestion.
 
-The repository is a monorepo for the competition solution; the plugin itself
-is self-contained under `plugin/`:
+## Quickstart — Claude Code
 
-```
-psai/
-├── plugin/                  # the Agent Plugins 1.0 package (this README's subject)
-│   ├── plugin.json          # manifest — the only source of truth
-│   └── skills/              # one directory per portal skill
-│       ├── open-canada-catalog/SKILL.md
-│       └── statcan-wds/SKILL.md
-├── src/psai/                # Python tooling: build/install commands
-└── dist/                    # generated output (gitignored)
-```
+Prerequisites: git, [uv](https://docs.astral.sh/uv/), and the DuckDB CLI
+(it carries the httpfs extension needed for in-place queries).
 
-New portal skills are added as `plugin/skills/<portal-slug>/SKILL.md`. The
-layout is inspired by [duckdb-skills](https://github.com/duckdb/duckdb-skills),
-re-packaged on the cross-agent plugin standard so any compatible client
-(Vibe, Codex, Cursor, GitHub Copilot, VS Code, ...) loads the same folder.
+    brew install uv duckdb
+    git clone https://github.com/asloci/psai.git && cd psai
+    uv run psai build-claude
+    claude --plugin-dir dist/claude/gc-data-explorer
 
-## Install
+Then invoke the skills with `/open-canada-catalog` and `/statcan-wds`.
 
-### Mistral Vibe
+- Claude Code loads the plugin per-session via `--plugin-dir`; see the
+  `marketplace.json` in `dist/` to install it persistently.
+- Claude Work (the web client) cannot mount a local plugin directory —
+  use Claude Code on your machine.
+- `curl` ships with macOS. `jq` (used in some example commands) does not;
+  `brew install jq` is optional.
 
-Current Vibe versions pin user plugins but do not yet register their skills
-with the model's skill tool, so install the skills loose (the route that
-works today) and optionally pin the plugin for when support lands:
+## Quickstart — Agent-skills users (Vibe, and any agent that discovers `.agents/skills/`)
 
-```
-uv run psai install-skills          # skills -> ~/.agents/skills/ (usable now)
-uv run psai install-skills --project  # or .agents/skills/ inside this repo
-uv run psai install-vibe           # plugin -> ~/.vibe/plugins/ (pinned)
-```
+Prerequisites: git and the DuckDB CLI. No build step and no uv required.
 
-Then `/reload` (or restart Vibe). The skill appears as `/open-canada-catalog`
-when installed loose, or `gc_data_explorer:open-canada-catalog` once plugin
-skill registration is supported.
+    brew install duckdb
+    git clone https://github.com/asloci/psai.git && cd psai
 
-### Other Agent Plugins 1.0 clients (Codex, Cursor, Copilot, VS Code)
+- Project-scoped (Vibe): open the cloned repo and accept the trust
+  prompt. The committed `.agents/skills/` directory is discovered
+  automatically — `/open-canada-catalog` and `/statcan-wds` work
+  immediately.
+- Global (any agent reading `~/.agents/skills/`): copy the skills once:
 
-Copy or point the client at the `plugin/` directory.
+      cp -R plugin/skills/statcan-wds plugin/skills/open-canada-catalog ~/.agents/skills/
 
-### Claude Code
-
-Claude Code keeps its own plugin format. Generate it from this source:
-
-```
-uv run psai build-claude
-```
-
-This writes a self-contained plugin (with its own marketplace manifest) to
-`dist/claude/gc-data-explorer/`. Load it locally:
-
-```
-claude --plugin-dir dist/claude/gc-data-explorer
-```
-
-To distribute to Claude Code users, publish the generated folder (a branch,
-release artifact, or separate repo) and they can add it as a marketplace.
-
-## Skills
-
-### `open-canada-catalog`
-Browse and search the Open Canada (CKAN) catalog at
-https://open.canada.ca via its GET-only Action API, then query a chosen CSV
-resource in place with DuckDB.
-
-```
-/gc-data-explorer:open-canada-catalog what datasets exist about public service employee surveys?
-/gc-data-explorer:open-canada-catalog list CSV resources from tbs-sct updated in the last year
-```
-
-### `statcan-wds`
-Query Statistics Canada's Web Data Service API live — browse cube/table
-metadata and dimensions, fetch time-series data points by coordinate or
-vector ID, and get full-table CSV download URLs. Requires a browser
-User-Agent header (503 otherwise).
-
-```
-/gc-data-explorer:statcan-wds what is the latest CPI all-items value for Canada?
-/gc-data-explorer:statcan-wds show metadata for table 18-10-0004-01
-```
-
-## How the skills work together
-
-Every skill in this package follows the same three-step flow: **discover**
-(catalog/API metadata only) → **retrieve** (query the API response in place)
-→ **query** (query a chosen resource in place, no ingest). Skills that need a
-step beyond DuckDB's direct reach (ZIP, XLSX) say so and hand off to a small
-download step or the `convert-file` skill.
-
-## Conventions shared by all skills
-
-- Bilingual metadata: CKAN-family portals expose `*_translated.en/fr` fields;
-  present English by default, offer French.
-- Encoding guardrails: government CSVs may be UTF-8 with BOM or Latin-1;
-  sniff before bulk reads.
-- Cheap first touch: `DESCRIBE` or `LIMIT` before any unbounded `SELECT *` on a
-  remote file.
-- Sentinel values (e.g. `9999` for "no data") must be nulled before analysis.
-- Citations: dataset title, department, dataset ID / portal URL, and the exact
-  resource URL the numbers came from.
+  They are then available in every project. Run `/reload` (Vibe) if a
+  session is already running.
 
 ## Roadmap
 
-- `open-canada-catalog` — Open Canada (CKAN) — shipped
-- `statcan-wds` — StatCan Web Data Service — shipped
-- Provincial portals (Ontario, Quebec, BC) — also CKAN-family, same API shape
-- Proactive disclosure / contracting datasets
-
-## Platform support and prerequisites
-
-The skills run inside an agentic coding tool on a **desktop OS — macOS,
-Windows, or Linux — with the DuckDB CLI installed.** They do not run on
-mobile devices (iOS/Android): there is no agent runtime and no DuckDB CLI
-there. A phone can read this repo, but it cannot execute the skills.
-
-- DuckDB CLI (`duckdb --version`): `brew install duckdb` (macOS),
-  `winget install DuckDB.cli` (Windows), or the single-file download from
-  duckdb.org (Linux). One static binary — no server, no account.
-- `httpfs` extension: recent DuckDB auto-installs and auto-loads it on the
-  first https read; manual fallback is `INSTALL httpfs; LOAD httpfs;`.
-- [uv](https://docs.astral.sh/uv/) — only for this repo's tooling
-  (`build-claude`, `install-skills`), not for using the skills themselves.
-
-## How a question becomes SQL, then facts
-
-A skill is instructions, not code. When you ask a question:
-
-1. The agent loads `SKILL.md` — a briefing on the portal's API endpoints,
-   response shapes, and DuckDB idioms.
-2. The agent composes SQL from those documented patterns (model-authored;
-   there are no fixed query templates) and runs it locally. DuckDB with
-   httpfs fetches the JSON/CSV over https; the catalog's API does the
-   counting server-side.
-3. The raw tables come back as tool output, and the agent writes the prose
-   answer around them.
-
-Reproducibility: the **facts are deterministic** — counts come from the
-catalog API, so any correct query path converges on the same numbers for the
-same point in time (the catalog itself changes daily). The **SQL text and
-prose are not**: another user, agent, or model should reach the same facts
-by a different route, with different queries and different wording. The
-skill constrains the approach (metadata-only discovery, no downloads, query
-in place with DuckDB), not the literal SQL.
+- Add more per-department skills for portals with APIs (provincial CKAN
+  portals, other departments).
+- Create an all-encompassing front-desk skill that routes to the
+  per-department skills.
+- That front-desk skill will offer a catalog of what is actually
+  available for over-the-wire analytics — so users never ask for PDFs,
+  HTML, SHP, XLSX, or ZIP files, and get straight to what is queryable.
