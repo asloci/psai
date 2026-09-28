@@ -1,11 +1,15 @@
-# Government of Canada Data Explorer
+# Public Service AI Challenge: Team 8 Skill/Tool Development
 
-Natural-language front desk for Government of Canada data. Two agent skills
-let you browse catalog metadata live — what datasets, cubes, and resources
-exist — and query anything DuckDB-readable in place over https: no
-downloads, no ingestion pipeline, no API keys. Resources that cannot be
-queried in place (ZIP, XLSX, PDF, SHP) are stated as such rather than
-approximated.
+> **Work in progress.** Patterns are verified against the live APIs, but
+> contents and structure may change.
+
+This repo currently contains two agent skills: one for navigating Open
+Canada catalog metadata, and one for navigating StatCan cube metadata.
+Both browse live over https — no downloads, no ingestion pipeline, no
+API keys — and when a resource is in a DuckDB-readable format (CSV, JSON,
+Parquet), the skills can also do analytics over-the-wire, querying it in
+place. Resources that cannot be queried in place (ZIP, XLSX, PDF, SHP)
+are stated as such rather than approximated.
 
 - `open-canada-catalog` — the Open Canada (CKAN) catalog: search ~48,000
   datasets across 350+ departments, then query chosen CSV/JSON resources
