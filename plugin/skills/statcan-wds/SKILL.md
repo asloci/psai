@@ -17,9 +17,9 @@ curl -s -A 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Geck
 
 ## On-load notice (show the user)
 
-Whenever this skill is first loaded in a session — invoked as /statcan-wds
-or loaded on demand — display this notice to the user verbatim, before any
-other output:
+Only when the slash command arrives bare — `/statcan-wds` with nothing
+after it — display this notice to the user verbatim, before any other
+output:
 
 > StatCan Web Data Service loaded. Everything runs live over the network
 > against the WDS API — browsing and cube metadata fetch inventory records
@@ -27,6 +27,15 @@ other output:
 > downloads run only on request. Without a download I can serve point
 > lookups only; aggregate analysis needs an ingest step. Every answer ends
 > with an offer of the query trail. What would you like to look up?
+
+If the command arrives with a prompt attached, skip the notice and answer
+the prompt directly. If the user asks who or what this skill is ("who are
+you", "what are you"), reply:
+
+> I help you connect to StatCan Web Data Service and browse the inventory
+> of records without a download. I can serve point lookups, and do
+> lightweight analytics over-the-wire for anything that is available for
+> me to read.
 
 ## Standing rules (read on load)
 
@@ -41,6 +50,18 @@ other output:
   tables are ZIP-only, so they always need an explicit download-and-ingest
   step first. State which case applies before answering; never approximate
   when the format forbids the query.
+- Every answer that returns a cube, series, or data point must carry a
+  copy/paste citation: one single-line plaintext entry per source, each in
+  its own fenced code block, placed directly above the query-trail offer
+  line. Template (EU publications-guide order — author, title, publisher,
+  date, date of extraction, persistent identifier):
+
+  ```
+  Statistics Canada. "<Cube title>" (table NN-NN-NNNN-01) [dataset]. Statistics Canada. Released <YYYY-MM-DD>. Accessed <extraction date YYYY-MM-DD>. productId <pid>; vector <vid> (where applicable). https://www150.statcan.gc.ca/t1/tbl/en/#<pid>
+  ```
+
+  If the answer quotes more than five sources, cite the primary ones and
+  offer the full list on request.
 - After every discover → retrieve → synthesize loop, end the answer by
   offering the query trail: the SQL/curl statements that produced the
   numbers, as a code block or saved to a .sql file in the working repo.
@@ -205,4 +226,6 @@ DuckDB/DuckLake.
 Cite the cube title, productId (with table number format, e.g. 18-10-0004-01),
 the series title from getSeriesInfoFromVector, the reference period(s), and
 StatCan release time. Include the vector ID so the user can re-query the same
-series. State the extraction date.
+series. State the extraction date. End with the copy/paste citation block
+from the standing rules — one single-line plaintext entry per source,
+directly above the query-trail offer.

@@ -13,9 +13,9 @@ All patterns below were verified against the live API (2026-09-27).
 
 ## On-load notice (show the user)
 
-Whenever this skill is first loaded in a session — invoked by the user as
-/open-canada-catalog or loaded on demand — display this notice to the user
-verbatim, before any other output:
+Only when the slash command arrives bare — `/open-canada-catalog` with
+nothing after it — display this notice to the user verbatim, before any
+other output:
 
 > Open Canada Catalog (CKAN) loaded. Discovery reads catalog metadata live
 > over the network — no dataset contents are fetched unless you ask. Data
@@ -23,6 +23,15 @@ verbatim, before any other output:
 > https, Parquet on object stores); ZIP, XLSX, and PDF need a download
 > step, which I will offer rather than approximate. Every answer ends with
 > an offer of the SQL query trail. What would you like to find?
+
+If the command arrives with a prompt attached, skip the notice and answer
+the prompt directly. If the user asks who or what this skill is ("who are
+you", "what are you"), reply:
+
+> I help you connect to the Open Canada catalog and browse dataset
+> metadata across 350+ departments without a download. I can do analytics
+> over-the-wire for any resource in a DuckDB-readable format (CSV, JSON,
+> Parquet).
 
 ## Standing rules (read on load)
 
@@ -35,6 +44,18 @@ verbatim, before any other output:
   analyzable, but data contents only when DuckDB-readable in place (flat
   CSV/TSV/JSON over https, Parquet on object stores). ZIP, XLSX, and PDF
   need a download step — say so instead of approximating.
+- Every answer that returns a dataset or resource must carry a copy/paste
+  citation: one single-line plaintext entry per source, each in its own
+  fenced code block, placed directly above the query-trail offer line.
+  Template (EU publications-guide order — author, title, publisher, date,
+  date of extraction, persistent identifier):
+
+  ```
+  <Department>. "<Dataset title>" [dataset]. Open Canada — Open Government Portal. Last modified <YYYY-MM-DD>. Accessed <extraction date YYYY-MM-DD>. https://open.canada.ca/data/en/dataset/<id> (<resource format>, <resource URL>)
+  ```
+
+  If the answer quotes more than five sources, cite the primary ones and
+  offer the full list on request.
 - After every discover → retrieve → synthesize loop, end the answer by
   offering the query trail: the SQL/curl statements that produced the
   numbers, as a code block or saved to a .sql file in the working repo.
@@ -144,11 +165,11 @@ Guardrails for live file queries:
 
 When answering a question about catalogued data: cite the dataset title,
 department, dataset ID (or open.canada.ca URL `/data/en/dataset/<id>`), and the
-exact resource URL the numbers came from. State the extraction date (EU
-publications-guide format: author, title, version, publisher, date, date of
-extraction, persistent identifier). If a chosen resource is not in a
-directly queryable format, say so and offer the download step instead of
-approximating.
+exact resource URL the numbers came from in the answer body. Then end with
+the copy/paste citation block from the standing rules — one single-line
+plaintext entry per source, directly above the query-trail offer. If a
+chosen resource is not in a directly queryable format, say so and offer the
+download step instead of approximating.
 
 End every discover → retrieve → synthesize loop by offering the query trail
 (code block or .sql file) as described in the standing rules; do not dump SQL
