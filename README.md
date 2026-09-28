@@ -3,6 +3,12 @@
 > **Work in progress.** Patterns are verified against the live APIs, but
 > contents and structure may change.
 
+| Open Canada Catalog | StatCan WDS |
+|:---:|:---:|
+| ![Example prompt and response using the open-canada-catalog skill](assets/open-canada-prompt-example.png) | ![Example prompt and response using the statcan-wds skill](assets/statcan-wds-prompt-example.png) |
+
+*Example prompts and responses from the Vibe Work desktop browser client.*
+
 This repo currently contains two agent skills: one for navigating Open
 Canada catalog metadata, and one for navigating StatCan cube metadata.
 Both browse live over https — no downloads, no ingestion pipeline, no
