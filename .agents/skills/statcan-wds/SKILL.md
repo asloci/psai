@@ -53,6 +53,18 @@ you", "what are you"), reply:
   tables are ZIP-only, so they always need an explicit download-and-ingest
   step first. State which case applies before answering; never approximate
   when the format forbids the query.
+- For ambiguous natural-language questions (unspecified series, date
+  range, or output), ask the user to pin these down before querying — use
+  the client's interactive question UI (cards) where available. The
+  choices are real cube dimensions from getCubeMetadata: geography, age
+  group, sex, product/industry classification, frequency, reference
+  period. "Let the data decide" is a valid answer — browse the metadata
+  and report the largest change. Real exchange (Vibe Work): asked "what
+  has been the biggest labour force change for Canada?", the agent offered
+  cards for date range (user chose COVID era, 2020-present), dimension
+  (user chose let the data decide), and output format (user chose written
+  brief with data tables). Match the chosen output format in the final
+  answer.
 - Every answer that returns a cube, series, or data point must carry a
   copy/paste citation: one single-line plaintext entry per source, each in
   its own fenced code block, placed directly above the query-trail offer
