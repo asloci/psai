@@ -113,6 +113,10 @@ Bridge to StatCan WDS: StatCan datasets' resource URLs contain the table number
 (e.g. `.../tbl/csv/15100011-eng.zip` → productId 15100011). Use the catalog to
 find what exists, then the statcan-wds skill for cube metadata and data.
 
+Bridge to data-publication-assistant: when the user wants a chart or
+publication visual of catalogued data, the data-publication-assistant skill
+governs chart choice, design, provenance, and export.
+
 ## Step 2 — Retrieve: query the catalog JSON itself with DuckDB
 
 The API response is a file DuckDB can query directly. Requires httpfs

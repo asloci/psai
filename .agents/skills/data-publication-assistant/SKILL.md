@@ -1,6 +1,6 @@
 ---
 name: data-publication-assistant
-description: Create publication-quality charts and visualizations from datasets or insights pulled from the open-canada-catalog and statcan-wds skills — one-off charts for reports, briefs, slides, and social media. Covers chart choice, design, accessibility (WCAG), titles, provenance, citation, and export. Load when asked to visualize, chart, or plot data for publication, or to review a chart for publication readiness. Works best in thinking/high-reasoning modes; fast modes tend to skip the process.
+description: Create publication-quality charts and visualizations from local files (CSV, XLSX, Parquet) or the open-canada-catalog and statcan-wds skills — one-off charts for reports, briefs, slides, and social media. Covers chart choice, design, accessibility (WCAG), titles, provenance, citation, and export. Load when asked to visualize, chart, or plot data for publication, or to review a chart for publication readiness. Works best in thinking/high-reasoning modes; fast modes tend to skip the process.
 ---
 
 # Data Publication Assistant — charts fit for publication

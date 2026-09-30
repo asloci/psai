@@ -306,3 +306,7 @@ reported points (statusCode/symbolCode, decoded via getCodeSets): say when a
 value is preliminary, suppressed, or "use with caution". End with the
 copy/paste citation block from the standing rules — one single-line plaintext
 entry per source, directly above the query-trail offer.
+
+Bridge to data-publication-assistant: when the user wants a chart, map, or
+publication visual of fetched data, the data-publication-assistant skill
+governs chart choice, design, provenance, and export.
