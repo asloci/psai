@@ -1,6 +1,6 @@
 ---
 name: statcan-wds
-description: Query Statistics Canada's Web Data Service (WDS) API live — browse released cubes and their metadata/dimensions, fetch time-series data points by coordinate or vector, and get full-table CSV download URLs. Use when the user wants StatCan aggregate data or table metadata (CPI, LFS, population, etc.), to check what was released on a given date, or to feed the getFullTableDownloadCSV URLs used in DuckDB ingestion.
+description: Query Statistics Canada's Web Data Service (WDS) API live — browse released cubes and their metadata/dimensions, fetch time-series data points by coordinate or vector, and get full-table CSV download URLs. Use when the user wants StatCan aggregate data or table metadata (CPI, LFS, population, etc.), to check what was released on a given date, or to feed the getFullTableDownloadCSV URLs used in DuckDB ingestion. Multi-step API orchestration (inventory → metadata → coordinate → data) works best in thinking/high-reasoning modes; low-reasoning ("fast") modes tend to shortcut to web scraping instead of using the API.
 ---
 
 # StatCan Web Data Service (WDS) — live aggregate data API
@@ -26,7 +26,10 @@ output:
 > only; nothing is downloaded or stored unless you ask, and full-table ZIP
 > downloads run only on request. Without a download I can serve point
 > lookups only; aggregate analysis needs an ingest step. Every answer ends
-> with an offer of the query trail. What would you like to look up?
+> with an offer of the query trail. Tip: multi-step lookups (inventory →
+> metadata → coordinate → data) work best in a thinking/high-reasoning
+> mode — fast modes may shortcut to web scraping instead of this API.
+> What would you like to look up?
 
 If the command arrives with a prompt attached, skip the notice and answer
 the prompt directly. If the user asks who or what this skill is ("who are

@@ -61,6 +61,19 @@ Prerequisites: git and the DuckDB CLI. No build step and no uv required.
   They are then available in every project. Run `/reload` (Vibe) if a
   session is already running.
 
+## Note on reasoning modes
+
+Both skills work by orchestrating multi-step API calls (search →
+metadata → coordinate/vector → data), not by reading web pages. They
+work best in a coding agent running with thinking or high-reasoning
+enabled. In low-reasoning or "fast" modes, agents tend to skip the skill
+and scrape stats off websites instead — if you see that, raise the
+reasoning level and re-ask.
+
+- Vibe: `/thinking high` before your question (or set
+  `thinking = "high"` on the model entry in `~/.vibe/config.toml`).
+- Claude Code/Claude Work: enable extended thinking.
+
 ## Roadmap
 
 - Add more per-department skills for portals with APIs (provincial CKAN
