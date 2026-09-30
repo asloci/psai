@@ -60,8 +60,19 @@ you", "what are you"), reply:
   date, date of extraction, persistent identifier):
 
   ```
-  Statistics Canada. "<Cube title>" (table NN-NN-NNNN-01) [dataset]. Statistics Canada. Released <YYYY-MM-DD>. Accessed <extraction date YYYY-MM-DD>. productId <pid>; vector <vid> (where applicable). https://www150.statcan.gc.ca/t1/tbl/en/#<pid>
+  Statistics Canada. "<Cube title>" (table NN-NN-NNNN-01) [dataset]. Statistics Canada. Released <YYYY-MM-DD>. Accessed <extraction date YYYY-MM-DD>. productId <pid>; vector <vid> (where applicable). https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=<pid>01
   ```
+
+  The table link is the only URL pattern allowed in the citation:
+  `https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=<productId>01` —
+  the HTML resource URL the Open Canada catalog records for StatCan tables
+  (verified live 2026-09-29, including Census 9810* cubes; the fragment-style
+  `/t1/tbl/en/#<pid>` does NOT resolve — never emit it). Never invent,
+  reconstruct, or approximate any other URL: any download or resource URL
+  cited must come verbatim from an API response (`object` of
+  getFullTableDownloadCSV, a catalog `resources[].url`). If no verified URL
+  exists for a source, cite productId and vector ID without a link rather
+  than fabricate one.
 
   If the answer quotes more than five sources, cite the primary ones and
   offer the full list on request.

@@ -56,6 +56,12 @@ you", "what are you"), reply:
   <Department>. "<Dataset title>" [dataset]. Open Canada — Open Government Portal. Last modified <YYYY-MM-DD>. Accessed <extraction date YYYY-MM-DD>. https://open.canada.ca/data/en/dataset/<id> (<resource format>, <resource URL>)
   ```
 
+  Never invent, reconstruct, or approximate a URL in a citation. The
+  dataset link comes from the result's `id`; the resource URL must be
+  copied verbatim from the API's `resources[].url`. If the API did not
+  return a URL for a source, cite the dataset ID without a link rather
+  than fabricate one.
+
   If the answer quotes more than five sources, cite the primary ones and
   offer the full list on request.
 - After every discover → retrieve → synthesize loop, end the answer by

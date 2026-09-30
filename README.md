@@ -63,7 +63,9 @@ Prerequisites: git and the DuckDB CLI. No build step and no uv required.
 
 ## Note on reasoning modes
 
-Both skills work by orchestrating multi-step API calls (search →
+These are prompt-based skills: instructions your agent reads and may
+choose to follow — or ignore. Consider this repo a proof-of-concept. Both
+skills work by orchestrating multi-step API calls (search →
 metadata → coordinate/vector → data), not by reading web pages. They
 work best in a coding agent running with thinking or high-reasoning
 enabled. In low-reasoning or "fast" modes, agents tend to skip the skill
