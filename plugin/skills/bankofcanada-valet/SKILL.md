@@ -42,6 +42,12 @@ you", "what are you"), reply:
 - Everything runs live over the network against the Valet API. Catalog
   browsing and series lookups fetch metadata and point payloads only —
   nothing is downloaded or stored unless the user asks.
+- Cache-first browsing: before fetching the series/group lists live, check
+  the unified local cache at `~/.cache/psai/catalog-cache/` (Parquet,
+  `source = 'valet'`; see the catalog-cache skill) — one DuckDB query
+  covers all ~18,500 series and groups instantly. Trust it only if its
+  `refreshed_at` vintage is 7 days old or less; if stale or absent, fall
+  back to the live lists. Observations (data points) always go live.
 - Queryability depends on format, and for Valet the news is good: the JSON
   responses are flat and DuckDB-readable in place, so lightweight analytics
   (aggregations, window functions, change calculations) run over-the-wire

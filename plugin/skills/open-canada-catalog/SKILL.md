@@ -44,6 +44,14 @@ you", "what are you"), reply:
   file. Discovery (Steps 1-2) fetches catalog metadata only: resource URLs
   are listed, never fetched. Only Step 3, run on explicit request, reads a
   dataset's contents.
+- Cache-first browsing: before live `package_search` calls, check the
+  unified local cache at `~/.cache/psai/catalog-cache/` (Parquet,
+  `source = 'ckan'`; see the catalog-cache skill) — one DuckDB query covers
+  all ~48,000 datasets instantly. Trust it only if its `refreshed_at`
+  vintage is 7 days old or less; if stale or absent, fall back to the live
+  API. Resource formats listed in the cache's `formats` column classify
+  into the tiers below without fetching. Single-dataset detail
+  (`package_show`) and any dataset contents always go live.
 - Queryability depends on the resource: catalog metadata is always
   analyzable, but data contents only when DuckDB-readable in place (flat
   CSV/TSV/JSON over https, Parquet on object stores). Classify every
