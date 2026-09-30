@@ -91,6 +91,23 @@ WHERE cubeTitleEn ILIKE '%consumer price index%'
 ORDER BY productId;
 ```
 
+Cache the inventory once per session: `read_json_auto` re-downloads the
+full cube list on every query, and WDS is slow on cold first contact (one
+getCubeMetadata observed at ~6s; later calls run 0.4-0.8s). Download once,
+then browse the local file — every subsequent natural-language query is
+sub-second:
+
+```bash
+curl -s -A "$UA" 'https://www150.statcan.gc.ca/t1/wds/rest/getAllCubesList' -o /tmp/wds_cubes.json
+```
+
+```sql
+SELECT productId, cansimId, cubeTitleEn, frequencyCode, archived
+FROM read_json_auto('/tmp/wds_cubes.json')
+WHERE cubeTitleEn ILIKE '%consumer price index%'
+ORDER BY productId;
+```
+
 Codes decode via getCodeSets: `archived` 0 = active, 1 = terminated
 (terminated cubes are still served, but frozen); `frequencyCode` 6 = monthly.
 The catalog ↔ cube bridge: every productId here is a WDS cube, and catalog
@@ -137,7 +154,25 @@ dot-separated and zero-padded to 10 segments. Example for CPI
 
 Build coordinates from getCubeMetadata's member IDs — never guess.
 
+Resolving a coordinate to a series (POST, same array shape as other calls):
+`getSeriesInfoFromCubePidCoord` with `[{"productId":...,"coordinate":"..."}]`
+returns the series title and its vectorId — the forward counterpart of
+`getSeriesInfoFromVector` (which maps a vector back to table + coordinate).
+
+Two coordinate traps (verified against a live notebook run, 2026-09-29):
+
+- A nonexistent coordinate does NOT error: it returns `status: "SUCCESS"`
+  with every object field empty. An absent `SeriesTitleEn` means "no such
+  series" — go back to metadata, don't permute coordinates.
+- Some series have no vector id: Census tables (productIds starting `9810`)
+  return `vectorId: 0`. Coordinate-based methods work there; vector-based
+  methods cannot be used at all.
+
 ## Retrieval — data points
+
+Batch POST bodies: the JSON array carries any number of coordinates or
+vector IDs per call, and multi-item payloads return in well under a second.
+Never loop one-item calls — one request per method, all series in the body.
 
 ```bash
 # By cube + coordinate, latest N periods (POST)
@@ -159,7 +194,9 @@ curl -s -A "$UA" -X POST 'https://www150.statcan.gc.ca/t1/wds/rest/getSeriesInfo
 
 Other retrieval methods (same shapes): `getBulkVectorDataByRange`,
 `getDataFromVectorByReferencePeriodRange`, `getChangedSeriesDataFromVector`,
-`getChangedSeriesDataFromCubePidCoord`.
+`getChangedSeriesDataFromCubePidCoord`. The range method is a GET whose
+`vectorIds` are quoted and comma-joined —
+`?vectorIds="41690973"&startRefPeriod=2015-01-01&endReferencePeriod=2020-01-01`.
 
 ## Joins and cross-cube use
 
@@ -210,15 +247,26 @@ DuckDB/DuckLake.
 
 - Always check `status == "SUCCESS"` per array element; `FAILED` with
   `responseStatusCode: 2` means the coordinate doesn't exist — go back to
-  metadata, don't permute coordinates.
+  metadata, don't permute coordinates. Also treat `SUCCESS` with empty
+  object fields as "no such series" (see Coordinates).
 - 406 errors are semantic rejections with a helpful `message` (invalid
   coordinate, wrong date format); 409 on getChangedCubeList = date not yet
-  released; 503 = you forgot the User-Agent.
-- POST bodies must be a JSON array, even for one item.
+  released; 409 on other calls = table locked during StatCan's nightly
+  update (roughly midnight to 8:30 AM Eastern) — say so and retry later;
+  503 = you forgot the User-Agent.
+- POST bodies must be a JSON array, even for one item — and batch multiple
+  series into one array rather than looping calls.
 - Prefer `latestN` and range methods over full-table download for answering
   questions; use full-table only for ingestion.
-- Values carry `decimals` and `scalarFactorCode` — apply them when presenting
-  numbers (getCodeSets decodes them).
+- Values carry `decimals` and `scalarFactorCode`. The API has already
+  applied the decimals; it has NOT applied the scalar factor — multiply by
+  10^scalarFactorCode when presenting numbers (getCodeSets decodes them).
+  `value` can arrive as a string and be empty when suppressed — cast before
+  arithmetic.
+- Data points carry `statusCode`/`symbolCode`/`securityLevelCode`. Decode
+  via getCodeSets and surface any non-zero flag ("use with caution",
+  suppressed, unreliable) on the points you report — never silently drop
+  or average flagged values.
 - Never join across cubes on guessed keys — see Joins and cross-cube use.
 
 ## Synthesize
@@ -226,6 +274,9 @@ DuckDB/DuckLake.
 Cite the cube title, productId (with table number format, e.g. 18-10-0004-01),
 the series title from getSeriesInfoFromVector, the reference period(s), and
 StatCan release time. Include the vector ID so the user can re-query the same
-series. State the extraction date. End with the copy/paste citation block
-from the standing rules — one single-line plaintext entry per source,
-directly above the query-trail offer.
+series (note when a series has none — Census tables — and give the coordinate
+instead). State the extraction date. Surface any quality flags on the
+reported points (statusCode/symbolCode, decoded via getCodeSets): say when a
+value is preliminary, suppressed, or "use with caution". End with the
+copy/paste citation block from the standing rules — one single-line plaintext
+entry per source, directly above the query-trail offer.
