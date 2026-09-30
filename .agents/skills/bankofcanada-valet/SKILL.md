@@ -7,8 +7,11 @@ description: Query the Bank of Canada Valet API live — browse the series and g
 
 Base: `https://www.bankofcanada.ca/valet/{method}` (French host:
 `https://www.banqueducanada.ca/valet/...`). GET only, no auth, no API key,
-no User-Agent requirement — plain curl works. Formats per endpoint: `json`
-(preferred, DuckDB-readable), `csv`, `xml`, `html`. Human docs:
+no User-Agent requirement — plain curl works. Formats: `json` (preferred —
+DuckDB-readable in place), `csv` (carries a preamble), and `xml` (clean
+shape, newest-first order, but not DuckDB-readable — no XML extension in
+current DuckDB builds). `html` is rejected by every endpoint ("Bad output
+format (html) requested."). Human docs:
 `https://www.bankofcanada.ca/valet/docs` (Swagger UI; no machine-readable
 spec is exposed — the patterns below were verified live, 2026-09-30).
 
@@ -186,10 +189,14 @@ curl -s 'https://www.bankofcanada.ca/valet/observations/FXUSDCAD/csv?start_date=
 
 The CSV carries a preamble: a terms-and-conditions block, a SERIES section
 with one row per series, then the OBSERVATIONS header and data. It is
-BOM-prefixed and CRLF-terminated. Reading it in DuckDB requires skip-tuning
-that varies with series count (`skip=8` works for a single series; one more
-line per additional series) — which is why JSON is the default path. For a
-user-facing CSV, deliver the API's own CSV rather than hand-building one.
+BOM-prefixed and CRLF-terminated. DuckDB's `read_csv` handles the UTF-8 BOM
+and CRLF fine — only the preamble needs skipping, and the skip count varies
+with series count (`skip=8` works for a single series; one more line per
+additional series), which is why JSON is the default path. (The
+pses-analytics `fetch_with_bom_strip` pattern — strip BOM, re-encode — is
+for Latin-1 files; BoC CSVs are UTF-8 with BOM, so no re-encoding is
+needed.) For a user-facing CSV, deliver the API's own CSV rather than
+hand-building one.
 
 ## Guardrails
 
