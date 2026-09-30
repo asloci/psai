@@ -192,11 +192,8 @@ with one row per series, then the OBSERVATIONS header and data. It is
 BOM-prefixed and CRLF-terminated. DuckDB's `read_csv` handles the UTF-8 BOM
 and CRLF fine — only the preamble needs skipping, and the skip count varies
 with series count (`skip=8` works for a single series; one more line per
-additional series), which is why JSON is the default path. (The
-pses-analytics `fetch_with_bom_strip` pattern — strip BOM, re-encode — is
-for Latin-1 files; BoC CSVs are UTF-8 with BOM, so no re-encoding is
-needed.) For a user-facing CSV, deliver the API's own CSV rather than
-hand-building one.
+additional series), which is why JSON is the default path. For a
+user-facing CSV, deliver the API's own CSV rather than hand-building one.
 
 ## Guardrails
 
