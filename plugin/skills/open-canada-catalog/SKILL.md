@@ -39,8 +39,8 @@ you", "what are you"), reply:
 
 - Everything runs live over the network against the CKAN API or, in Step 3, a
   resource URL — nothing is downloaded or stored unless the user asks for a
-  file. Discovery (Steps 1-2) fetches catalog metadata only: no dataset
-  contents, no resource URLs. Only Step 3, run on explicit request, reads a
+  file. Discovery (Steps 1-2) fetches catalog metadata only: resource URLs
+  are listed, never fetched. Only Step 3, run on explicit request, reads a
   dataset's contents.
 - Queryability depends on the resource: catalog metadata is always
   analyzable, but data contents only when DuckDB-readable in place (flat
@@ -79,7 +79,7 @@ Example prompts:
 
 ```bash
 # Full-text search over titles/descriptions; returns count + paginated metadata
-curl -s 'https://open.canada.ca/data/en/api/3/action/package_search?q=PSES&rows=20'   jq '.result.count, [.result.results[] | {title: .title_translated.en, org: .organization.title, id: .id}]'
+curl -s 'https://open.canada.ca/data/en/api/3/action/package_search?q=PSES&rows=20' | jq '.result.count, [.result.results[] | {title: .title_translated.en, org: .organization.title, id: .id}]'
 ```
 
 Useful variants (all verified):
@@ -117,6 +117,11 @@ Bridge to data-publication-assistant: when the user wants a chart or
 publication visual of catalogued data, the data-publication-assistant skill
 governs chart choice, design, provenance, and export.
 
+Bridge to Bank of Canada Valet: for Bank of Canada financial time series
+(exchange rates, interest rates, commodity price indices), the
+bankofcanada-valet skill queries the Valet API directly — the freshest path
+even where a catalog entry also exists.
+
 ## Step 2 — Retrieve: query the catalog JSON itself with DuckDB
 
 The API response is a file DuckDB can query directly. Requires httpfs
@@ -124,16 +129,18 @@ The API response is a file DuckDB can query directly. Requires httpfs
 
 ```sql
 -- Query the search response in place: list matching datasets and their CSV resources
+-- maximum_depth=2 keeps each result as raw JSON — CKAN's mixed-precision
+-- timestamps (some with, some without fractional seconds) break plain
+-- read_json_auto's timestamp parsing.
 SELECT
-  unnest(result.results) AS pkg,
-  pkg.title_translated.en AS title,
-  pkg.organization.title AS org,
-  pkg.metadata_modified,
-  unnest(pkg.resources) AS res,
-  res.format,
-  res.url
-FROM read_json_auto('https://open.canada.ca/data/en/api/3/action/package_search?q=PSES&rows=20')
-WHERE res.format = 'CSV';
+  pkg->>'$.title_translated.en' AS title,
+  pkg->>'$.organization.title' AS org,
+  res->>'$.format' AS fmt,
+  res->>'$.url' AS url
+FROM read_json_auto('https://open.canada.ca/data/en/api/3/action/package_search?q=PSES&rows=20', maximum_depth=2),
+     UNNEST(json_extract(result, '$.results[*]')) AS t(pkg),
+     UNNEST(json_extract(pkg, '$.resources[*]')) AS u(res)
+WHERE res->>'$.format' = 'CSV';
 ```
 
 Note: `read_json_auto` over https fetches the whole JSON document per query. For
