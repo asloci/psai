@@ -9,6 +9,10 @@
 
 *Example prompts and responses from the Vibe Work desktop browser client.*
 
+Example written brief: *"What has been the biggest Labour Force change in
+Canada?"* — [Canada's biggest labour force change, COVID era 2020–2026
+(PDF)](assets/canada-s-biggest-labour-force-change-covid-era-2020-2026.pdf)
+
 This repo currently contains two agent skills: one for navigating Open
 Canada catalog metadata, and one for navigating StatCan cube metadata.
 Both browse live over https — no downloads, no ingestion pipeline, no
