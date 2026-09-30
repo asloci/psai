@@ -9,7 +9,8 @@ Open Canada (https://open.canada.ca) runs CKAN. Everything is exposed through a
 GET-only RPC Action API. No auth, no POST, parameters in the URL. English base:
 `https://open.canada.ca/data/en/api/3/action/...` (French: `/fr/`).
 
-All patterns below were verified against the live API (2026-09-27).
+All patterns below were verified against the live API (2026-09-27; the
+Step 2 pattern on 2026-09-30).
 
 ## On-load notice (show the user)
 
@@ -152,8 +153,27 @@ FROM read_json_auto('https://open.canada.ca/data/en/api/3/action/package_search?
 WHERE res->>'$.format' = 'CSV';
 ```
 
-Note: `read_json_auto` over https fetches the whole JSON document per query. For
-repeated catalog exploration, download it once to a local file and query that.
+Note: `read_json_auto` over https fetches the whole JSON document per query.
+For repeated catalog exploration of the same search, cache it once per
+session and browse locally — same pattern as the cube/series lists in the
+sibling skills:
+
+```bash
+curl -s 'https://open.canada.ca/data/en/api/3/action/package_search?q=PSES&rows=100' -o /tmp/ckan_search.json
+```
+
+```sql
+-- Same query as above, against the local cached file — instant to iterate on
+SELECT
+  pkg->>'$.title_translated.en' AS title,
+  pkg->>'$.organization.title' AS org,
+  res->>'$.format' AS fmt,
+  res->>'$.url' AS url
+FROM read_json_auto('/tmp/ckan_search.json', maximum_depth=2),
+     UNNEST(json_extract(result, '$.results[*]')) AS t(pkg),
+     UNNEST(json_extract(pkg, '$.resources[*]')) AS u(res)
+WHERE res->>'$.format' = 'CSV';
+```
 
 ## Step 3 — Query a chosen resource in place (no ingest)
 
