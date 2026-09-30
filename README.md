@@ -20,9 +20,11 @@ are stated as such rather than approximated.
 - `open-canada-catalog` — the Open Canada (CKAN) catalog: search ~48,000
   datasets across 350+ departments, then query chosen CSV/JSON resources
   in place.
-- `statcan-wds` — Statistics Canada's Web Data Service: browse the full
-  cube inventory, fetch time-series points by coordinate or vector ID,
-  and get full-table CSV download URLs for ingestion.
+- `statcan-wds` — pulls official Statistics Canada data straight from the
+  source: inflation, jobs, population. Finds the table, reads its
+  dimensions, then serves the exact series you need — lightweight
+  analytics over the wire, usually with no download at all. Full-table
+  CSV export only when you ask.
 
 ## Quickstart — Claude Code
 
