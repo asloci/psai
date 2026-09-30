@@ -1,6 +1,6 @@
 ---
 name: open-canada-catalog
-description: Browse and search the Open Canada (CKAN) catalog via its API without downloading datasets, then query chosen CSV/JSON resources directly with DuckDB over https. For discovering what Government of Canada datasets exist, inspecting metadata/resources, or querying a catalogued tabular file live without ingesting it first. Works best in thinking/high-reasoning modes; fast modes tend to web-scrape instead of using the API.
+description: Browse and search the Open Canada (CKAN) catalog via its API without downloads, then query chosen CSV/JSON resources directly with DuckDB over https. For discovering what Government of Canada datasets exist, inspecting metadata/resources, or querying a catalogued tabular file live without ingesting it first. Unreadable resources (HTML, PDF, XLSX) are fetched, cited, and table-extracted. Works best in thinking/high-reasoning modes; fast modes tend to web-scrape instead of using the API.
 ---
 
 # Open Canada Catalog (CKAN) — browse, then query in place
@@ -21,11 +21,12 @@ other output:
 > Open Canada Catalog (CKAN) loaded. Discovery reads catalog metadata live
 > over the network — no dataset contents are fetched unless you ask. Data
 > is analyzable only when DuckDB-readable in place (flat CSV/TSV/JSON over
-> https, Parquet on object stores); ZIP, XLSX, and PDF need a download
-> step, which I will offer rather than approximate. Every answer ends with
-> an offer of the SQL query trail. Tip: multi-step catalog lookups work
-> best in a thinking/high-reasoning mode — fast modes may shortcut to web
-> scraping instead of this API. What would you like to find?
+> https); other formats need a download step, and unstructured documents
+> (HTML, PDF, XLSX) I fetch and extract tables from first, handing the rest
+> to your platform's reader. Every answer ends with an offer of the SQL
+> query trail. Tip: multi-step catalog lookups work best in a
+> thinking/high-reasoning mode — fast modes may shortcut to web scraping
+> instead of this API. What would you like to find?
 
 If the command arrives with a prompt attached, skip the notice and answer
 the prompt directly. If the user asks who or what this skill is ("who are
@@ -45,8 +46,12 @@ you", "what are you"), reply:
   dataset's contents.
 - Queryability depends on the resource: catalog metadata is always
   analyzable, but data contents only when DuckDB-readable in place (flat
-  CSV/TSV/JSON over https, Parquet on object stores). ZIP, XLSX, and PDF
-  need a download step — say so instead of approximating.
+  CSV/TSV/JSON over https, Parquet on object stores). Classify every
+  resource by its `format` at metadata time — never by fetching — into
+  Tier A (readable in place → Step 3), Tier B (download + transform → curl
+  then unzip/excel/spatial), or Tier C (unstructured document → Step 4).
+  Say which tier applies; never approximate when the format forbids the
+  query.
 - For ambiguous natural-language questions (unspecified dataset, department,
   resource format, or output), ask the user to pin these down before
   querying — use the client's interactive question UI (cards) where
@@ -101,6 +106,12 @@ Useful variants (all verified):
 - `organization_list` → all ~350 department slugs.
 - `package_list` → IDs of all ~48,000 datasets (rarely needed; prefer search).
 - `recently_changed_packages_activity_list` → recently updated datasets.
+- `rows=0&facet.field=["res_format"]` → counts of every resource format
+  matching a query, zero data transfer (URL-encode the brackets:
+  `facet.field=%5B%22res_format%22%5D`; same works for `"organization"`).
+  Catalog-wide on 2026-09-30: HTML 32,335; CSV 15,790; XML 12,934; PDF
+  8,322 — unstructured documents are the majority of the catalog, which is
+  why Step 4 exists.
 
 Search tips (verified):
 
@@ -202,12 +213,44 @@ Guardrails for live file queries:
 - Sentinel values: PSES-family tables use `9999` for "no data" — apply
   `NULLIF(CAST(col AS INTEGER), 9999)` like the pses-analytics pipeline does.
 
-## What DuckDB can and cannot read directly
+## Resource tiers — classify by `format`, never by fetching
 
-- Direct over https: flat CSV/TSV/JSON (and Parquet on object stores).
-- NOT direct: ZIP archives (StatCan CSV zips), XLSX, PDF. These need a small
-  download step (`curl -L -o`), then local `read_csv` (after unzip) or the
-  convert-file skill for XLSX.
+Every resource carries `format` in `resources[]`; route on it at metadata
+time (counts from the catalog-wide facet query, verified 2026-09-30):
+
+| Tier | Formats | Path |
+|---|---|---|
+| A — readable in place | CSV, TSV, JSON, TXT, ESRI REST (returns JSON) | Step 3 |
+| B — download + transform | ZIP (unzip → CSV), XLSX/XLS (DuckDB `excel` extension `read_xlsx`, or the convert-file skill), SHP/KML/FGDB/GEOJSON (spatial skill; GeoJSON also reads as JSON) | `curl -L -o`, then transform locally |
+| C — unstructured document | HTML, PDF, DOCX, PBIX, JP2/JPG | Step 4 |
+
+XML (12,934 resources) has no reader in current DuckDB builds — parse
+platform-side or via a transform; do not claim it is directly readable.
+
+## Step 4 — Unstructured documents: fetch, cite, then delegate
+
+Tier C is the majority of the catalog (32,335 HTML + 8,322 PDF resources
+alone). The pattern: fetch the real file, cite it, extract tables first,
+and let the platform decide the reader.
+
+1. Size and content-type check first — never blind-download a large file:
+   `curl -sI '<resource URL>'` (Content-Length, Content-Type).
+2. Fetch to a local file: `curl -sL '<resource URL>' -o /tmp/<name>`.
+3. Cite the fetched file per the standing citation rule — before opening it.
+4. Extract in priority order — tables first:
+   a. embedded tables (HTML `<table>`, PDF text-layer tables, XLSX sheets);
+   b. full text layer;
+   c. machine vision on rendered pages — fallback for scanned PDFs and
+      images.
+   Which of these runs is the platform's call: a CLI agent uses Python
+   libraries (`pandas.read_html`, `pdfplumber`); a GUI client uses its
+   document/vision models; mobile does what it can. The skill fixes the
+   priority order, not the tool.
+5. The fetched file is the source — never answer a question about a
+   document's contents from memory or from the dataset title alone.
+6. If the file is too large for the platform to handle, say so and fall
+   back to the catalog metadata (title, department, description) instead
+   of guessing.
 
 ## Synthesize
 
@@ -216,8 +259,8 @@ department, dataset ID (or open.canada.ca URL `/data/en/dataset/<id>`), and the
 exact resource URL the numbers came from in the answer body. Then end with
 the copy/paste citation block from the standing rules — one single-line
 plaintext entry per source, directly above the query-trail offer. If a
-chosen resource is not in a directly queryable format, say so and offer the
-download step instead of approximating.
+chosen resource is Tier B or C, say which tier applies and offer the
+download path or table-first extraction instead of approximating.
 
 End every discover → retrieve → synthesize loop by offering the query trail
 (code block or .sql file) as described in the standing rules; do not dump SQL
