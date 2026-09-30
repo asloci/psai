@@ -1,6 +1,6 @@
 ---
 name: statcan-wds
-description: Query Statistics Canada's Web Data Service (WDS) API live — browse released cubes and their metadata/dimensions, fetch time-series data points by coordinate or vector, and get full-table CSV download URLs. Use when the user wants StatCan aggregate data or table metadata (CPI, LFS, population, etc.), to check what was released on a given date, or to feed the getFullTableDownloadCSV URLs used in DuckDB ingestion. Multi-step API orchestration (inventory → metadata → coordinate → data) works best in thinking/high-reasoning modes; low-reasoning ("fast") modes tend to shortcut to web scraping instead of using the API.
+description: Query Statistics Canada's Web Data Service (WDS) API live — browse released cubes and metadata, fetch time-series data points by coordinate or vector ID, and get full-table CSV download URLs. For StatCan aggregate data or table metadata (CPI, LFS, population), releases on a given date, or getFullTableDownloadCSV URLs for DuckDB ingestion. Works best in thinking/high-reasoning modes; fast modes tend to web-scrape instead of using the API.
 ---
 
 # StatCan Web Data Service (WDS) — live aggregate data API

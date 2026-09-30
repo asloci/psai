@@ -1,6 +1,6 @@
 ---
 name: open-canada-catalog
-description: Browse and search the Open Canada (CKAN) data catalog via its API without downloading datasets, then query chosen CSV/JSON resources directly with DuckDB over https. Use when the user wants to discover what Government of Canada datasets exist, inspect dataset metadata/resources, or ask questions of a catalogued tabular file live without ingesting it first. Multi-step catalog lookups work best in thinking/high-reasoning modes; low-reasoning ("fast") modes tend to shortcut to web scraping instead of using the API.
+description: Browse and search the Open Canada (CKAN) catalog via its API without downloading datasets, then query chosen CSV/JSON resources directly with DuckDB over https. For discovering what Government of Canada datasets exist, inspecting metadata/resources, or querying a catalogued tabular file live without ingesting it first. Works best in thinking/high-reasoning modes; fast modes tend to web-scrape instead of using the API.
 ---
 
 # Open Canada Catalog (CKAN) — browse, then query in place
