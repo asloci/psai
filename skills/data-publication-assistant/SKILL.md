@@ -229,8 +229,16 @@ provenance block, and export section below.
 
 - Default: PNG (fixed, portable) and SVG (editable, scalable) if the
   rendering path supports it.
+- PNG is the deliverable of record; treat SVG as an editable source, not the
+  published artifact. SVG renders inconsistently across viewers and sizes
+  (font substitution, clipping, label overlap when scaled). If SVG is kept:
+  it must carry an explicit `viewBox` plus `width`/`height` so it scales
+  proportionally, use self-contained or generic font stacks (no fonts the
+  viewer may not have), and be checked at both a small (mobile/social) and
+  a large (slide/print) size before handoff.
 - Offer aspect variants on request: 16:9 for slides, 1:1 for social,
-  portrait for print.
+  portrait for print. Export PNG at 2x the target size so downscaled
+  rendering stays sharp.
 - The exported file must carry the provenance block; a bare chart image
   loses its source the moment it travels.
 - Also offer the underlying data as a tidy CSV/JSON (see next section)
