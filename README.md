@@ -2,7 +2,7 @@
 
 > **Work in progress.** These skills are prompts: instructions your agent reads and may choose to follow. They work best with a coding agent in a thinking/high-reasoning mode.
 
-Skills that let an AI agent search Government of Canada open data and query it where it lies — over the web, with DuckDB. No downloads, no data pipeline, no API keys. Formats that cannot be read this way (ZIP, XLSX, PDF, SHP) are named as such, never approximated. Every command in this README was run against the live sources on 2026-10-01.
+Skills that let an AI agent search Government of Canada open data and query it where it lies — over the web, with DuckDB. No downloads, no data pipeline, no API keys. Formats that cannot be read this way (ZIP, XLSX, PDF, SHP) are named as such, never approximated. Every command in this README was run against the live sources on 2026-10-01. Any model that follows these skills pulls the same numbers from the source and cites the dataset. The model you choose only writes the words around them.
 
 | Skill | What it does |
 |---|---|
