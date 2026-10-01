@@ -53,8 +53,8 @@ you", "what are you"), reply:
 - Staleness rule: check `refreshed_at` before trusting the cache. If it
   is older than 7 days, say so, offer to rebuild
   (`uv run --with duckdb scripts/build_catalog_cache.py`, ~1-3 min), and
-  fall back to the live APIs if the platform has no filesystem or the
-  user declines a rebuild. Never present a stale cache as current.
+  follow the fallback tree (next section) — release asset, rebuild, or
+  live APIs. Never present a stale cache as current.
 - Queryability is unconditional: Parquet is DuckDB-readable in place, on
   any platform with DuckDB — no ingest step, no downloads.
 - For ambiguous natural-language browsing (unspecified source, topic, or
@@ -87,6 +87,40 @@ Example prompts:
 - "What exists about consumer price indexes across all three catalogs?"
 - "How many datasets does each department publish, and in which formats?"
 - "Is there anything about labour force for Ottawa-Gatineau anywhere?"
+
+## Fallback tree (decision order)
+
+Work down this tree in order; stop at the first step that works.
+
+1. **Local cache, fresh.** Query
+   `~/.cache/psai/catalog-cache/**/*.parquet` with
+   `hive_partitioning=1` (see Querying the cache). Check
+   `refreshed_at` first; trust it only if it is within 7 days.
+
+2. **Release asset over https.** No local cache (or stale)? Read the
+   latest published vintage in place — no download, no build, first
+   query in seconds. httpfs required
+   (`duckdb -c "INSTALL httpfs; LOAD httpfs;"`):
+
+   ```sql
+   SELECT source, count(*) AS n
+   FROM read_parquet('https://github.com/asloci/psai/releases/download/catalog-cache-v<YYYY.MM.DD>/catalog-cache-v<YYYY.MM.DD>.parquet')
+   GROUP BY source;
+   ```
+
+   Pick the most recent `catalog-cache-v*` release on
+   github.com/asloci/psai/releases (a nightly workflow mints one per
+   day, so it is at most 1 day old — always inside the 7-day window;
+   check the release date for one-off reads). The release asset has no
+   `source` partition folders — it is a single file, so no
+   `hive_partitioning` needed.
+
+3. **Build or go live.** Offline, httpfs unavailable, or the asset is
+   beyond the trust window? Either rebuild locally —
+   `uv run --with duckdb scripts/build_catalog_cache.py` (~1-3 min,
+   writes `~/.cache/psai/catalog-cache/`) — or go live to the source
+   APIs via the sibling skills (open-canada-catalog, statcan-wds,
+   bankofcanada-valet). Say which path you took.
 
 ## Querying the cache
 
