@@ -1,0 +1,40 @@
+name: catalog-cache
+
+on:
+  schedule:
+    - cron: "30 8 * * *" # 08:30 UTC daily (04:30 Eastern)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Build cache
+        run: uv run --with duckdb scripts/build_catalog_cache.py
+
+      - name: Publish dated release asset
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DATE=$(date -u +%Y.%m.%d)
+          TAG="catalog-cache-v${DATE}"
+          cp ~/.cache/psai/catalog-cache.parquet "catalog-cache-v${DATE}.parquet"
+          gh release create "${TAG}" "catalog-cache-v${DATE}.parquet" \
+            --title "Catalog cache ${DATE}" \
+            --notes "Unified catalog cache (CKAN + StatCan WDS + Bank of Canada Valet), single Parquet file, built ${DATE}. Read in place with DuckDB: read_parquet('https://github.com/asloci/psai/releases/download/${TAG}/catalog-cache-v${DATE}.parquet')" \
+            || gh release upload "${TAG}" "catalog-cache-v${DATE}.parquet" --clobber
+
+      - name: Prune old vintages (keep latest 7)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release list --limit 100 --json tagName --jq '.[].tagName' \
+            | grep '^catalog-cache-v' | sort | head -n -7 \
+            | xargs -r -I{} gh release delete {} --yes --cleanup-tag
