@@ -125,7 +125,7 @@ A GitHub Actions workflow builds a fresh vintage every night at 08:30 UTC on Git
 
 ## Companion skill
 
-`data-publication-assistant` — publication-quality charts and visualizations from local files (CSV, XLSX, Parquet) or the data skills above. Conventions are borrowed from the EU Publications Office's data publication guidance, adapted to the Government of Canada context: chart choice, accessibility (WCAG), titles, provenance, citation, and export. It is a companion to the data skills, not part of the core challenge framing.
+`data-publication-assistant` — publication-quality charts and visualizations from local files (CSV, XLSX, Parquet) or the data skills above. Conventions are borrowed from the [EU Publications Office's data publication guidance](https://data.europa.eu/apps/data-in-publications-guide/). adapted to the Government of Canada context: chart choice, accessibility (WCAG), titles, provenance, citation, and export.
 
 ## On governance
 
