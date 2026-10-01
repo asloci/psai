@@ -34,11 +34,11 @@ Each skill is a plain folder with a `SKILL.md` inside. Copy the folder you want 
 Search the Open Canada catalog (~48,000 datasets from 352 departments) with the CKAN Action API, then query a chosen CSV or JSON resource in place.
 
 ```bash
-# How many datasets mention PSES? (count only, nothing transferred)
-curl -s 'https://open.canada.ca/data/en/api/3/action/package_search?q=PSES&rows=0' | jq .result.count
+# Datasets with at least one HTML resource, counted per department (nothing transferred)
+curl -s 'https://open.canada.ca/data/en/api/3/action/package_search?q=&fq=res_format:HTML&facet.field=%5B%22organization%22%5D&rows=0' | jq '.result.count, .result.facets.organization'
 ```
 
-Example ask: *"Find the latest PSES dataset, then query its CSV in place for response rate by department."* The skill searches, lists the dataset's resources, and runs a DuckDB aggregation straight against the CSV URL — no download, no ingest.
+Example ask: *"Which departments publish the most HTML, compared to CSV or JSON?"* The skill counts each format with one call (verified 2026-10-01: 32,367 datasets carry an HTML resource, 15,792 a CSV, 401 a JSON), then reads the organization facet for the ranking: Statistics Canada tops HTML and CSV (8,981 and 8,450), while Yukon (2,919), Alberta (2,893), and Health Canada (2,822) publish almost exclusively HTML.
 
 Cite it as:
 
@@ -51,12 +51,15 @@ Cite it as:
 Pull official Statistics Canada data straight from the source: inflation, jobs, population, and every other released cube. The skill follows the agency's own process — find the table, read its dimensions, locate the exact series — and serves point lookups over the web, usually with no download at all. A full-table CSV export runs only when you ask.
 
 ```bash
-# The all-items CPI series for Canada, latest 3 months (a browser User-Agent is required)
-curl -s -A 'Mozilla/5.0' -X POST 'https://www150.statcan.gc.ca/t1/wds/rest/getDataFromVectorsAndLatestNPeriods' \
-  -H 'Content-Type: application/json' -d '[{"vectorId":41690973,"latestN":3}]'
+# LFS employment in information, culture and recreation, by gender, latest 3 months
+# (coordinates built from the cube's own metadata; both series in one batched call)
+curl -s -A 'Mozilla/5.0' -X POST 'https://www150.statcan.gc.ca/t1/wds/rest/getDataFromCubePidCoordAndLatestNPeriods' \
+  -H 'Content-Type: application/json' \
+  -d '[{"productId":14100022,"coordinate":"1.2.25.2.1.0.0.0.0.0","latestN":3},
+       {"productId":14100022,"coordinate":"1.2.25.3.1.0.0.0.0.0","latestN":3}]'
 ```
 
-Example ask: *"How many active CPI tables are there, and which are monthly?"* The skill filters the full cube inventory with DuckDB, then answers with table numbers, titles, and release dates.
+Example ask: *"How many men and women work in Canada's information, culture and recreation sector?"* The skill browses the cube inventory for Labour Force Survey cubes, reads the cube's dimensions to build one coordinate per gender, and returns both series in a single call: August 2026, 512,500 men and 468,300 women (released 2026-09-04).
 
 Cite it as:
 
@@ -69,13 +72,13 @@ Statistics Canada. "<Cube title>" (table NN-NN-NNNN-01) [dataset]. Statistics Ca
 Browse the Valet series and group catalogs (~18,500 entries: exchange rates, interest rates, commodity price indices, money-market statistics), fetch a series by date range or latest N, and read the JSON in place with DuckDB. GET only, no API key. Valet matches by exact series code, so the skill finds your code in the catalog first.
 
 ```sql
--- USD/CAD daily exchange rate, last 5 business days, read in place
-SELECT u.d AS date, u.FXUSDCAD.v AS usd_cad
+-- CAD/EUR daily exchange rate, last 5 business days, read in place
+SELECT u.d AS date, u.FXCADEUR.v AS cad_to_eur
 FROM (SELECT unnest(observations) AS u
-      FROM read_json_auto('https://www.bankofcanada.ca/valet/observations/FXUSDCAD/json?recent=5'));
+      FROM read_json_auto('https://www.bankofcanada.ca/valet/observations/FXCADEUR/json?recent=5'));
 ```
 
-Example ask: *"Plot CAD/EUR over the last two years."* The skill resolves the series code from the group catalog, pulls the observation JSON, and computes over the web.
+Example ask: *"Plot CAD/EUR over the last two years."* The skill resolves the series code from the group catalog, pulls the observation JSON, and computes over the web — 1 CAD bought 0.6217 EUR on 2026-09-29.
 
 Cite it as:
 
@@ -125,7 +128,7 @@ A GitHub Actions workflow builds a fresh vintage every night at 08:30 UTC on Git
 
 ## Companion skill
 
-`data-publication-assistant` — publication-quality charts and visualizations from local files (CSV, XLSX, Parquet) or the data skills above. Conventions are borrowed from the [EU Publications Office's data publication guidance](https://data.europa.eu/apps/data-in-publications-guide/). adapted to the Government of Canada context: chart choice, accessibility (WCAG), titles, provenance, citation, and export.
+`data-publication-assistant` — publication-quality charts and visualizations from local files (CSV, XLSX, Parquet) or the data skills above. Conventions are borrowed from the [EU Publications Office's data publication guidance](https://data.europa.eu/apps/data-in-publications-guide/). Adapted to the Government of Canada context: chart choice, accessibility (WCAG), titles, provenance, citation, and export.
 
 ## On governance
 
