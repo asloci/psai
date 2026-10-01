@@ -51,15 +51,15 @@ Cite it as:
 Pull official Statistics Canada data straight from the source: inflation, jobs, population, and every other released cube. The skill follows the agency's own process — find the table, read its dimensions, locate the exact series — and serves point lookups over the web, usually with no download at all. A full-table CSV export runs only when you ask.
 
 ```bash
-# LFS employment in information, culture and recreation, by gender, latest 3 months
+# International migration in-flows and out-flows, Canada, quarterly, last 11 years
 # (coordinates built from the cube's own metadata; both series in one batched call)
 curl -s -A 'Mozilla/5.0' -X POST 'https://www150.statcan.gc.ca/t1/wds/rest/getDataFromCubePidCoordAndLatestNPeriods' \
   -H 'Content-Type: application/json' \
-  -d '[{"productId":14100022,"coordinate":"1.2.25.2.1.0.0.0.0.0","latestN":3},
-       {"productId":14100022,"coordinate":"1.2.25.3.1.0.0.0.0.0","latestN":3}]'
+  -d '[{"productId":17100040,"coordinate":"1.1.0.0.0.0.0.0.0.0","latestN":44},
+       {"productId":17100040,"coordinate":"1.2.0.0.0.0.0.0.0.0","latestN":44}]'
 ```
 
-Example ask: *"How many men and women work in Canada's information, culture and recreation sector?"* The skill browses the cube inventory for Labour Force Survey cubes, reads the cube's dimensions to build one coordinate per gender, and returns both series in a single call: August 2026, 512,500 men and 468,300 women (released 2026-09-04).
+Example ask: *"Show migration in-flows and out-flows from covid-era to now, and the 1-, 5-, and 10-year change."* The skill browses the cube inventory for migration cubes, reads cube 17-10-0040's dimensions to build one coordinate for Immigrants and one for Emigrants, and returns both 11-year series in a single call. At the covid border closures (Q2 2020), in-flows bottomed at 34,072 against out-flows of 7,431; by Q2 2026 in-flows stood at 99,148 (−4.2% on the year, +33.2% on five, +12.3% on ten) and out-flows at 24,926 (+1.1%, +45.8%, +79.3%) — released 2026-09-23.
 
 Cite it as:
 
@@ -72,13 +72,13 @@ Statistics Canada. "<Cube title>" (table NN-NN-NNNN-01) [dataset]. Statistics Ca
 Browse the Valet series and group catalogs (~18,500 entries: exchange rates, interest rates, commodity price indices, money-market statistics), fetch a series by date range or latest N, and read the JSON in place with DuckDB. GET only, no API key. Valet matches by exact series code, so the skill finds your code in the catalog first.
 
 ```sql
--- CAD/EUR daily exchange rate, last 5 business days, read in place
-SELECT u.d AS date, u.FXCADEUR.v AS cad_to_eur
+-- CAD/EUR vs CAD/JPY, past week, both series in one combined call
+SELECT u.d AS date, u.FXCADEUR.v AS cad_to_eur, u.FXCADJPY.v AS cad_to_jpy
 FROM (SELECT unnest(observations) AS u
-      FROM read_json_auto('https://www.bankofcanada.ca/valet/observations/FXCADEUR/json?recent=5'));
+      FROM read_json_auto('https://www.bankofcanada.ca/valet/observations/FXCADEUR,FXCADJPY/json?recent=7'));
 ```
 
-Example ask: *"Plot CAD/EUR over the last two years."* The skill resolves the series code from the group catalog, pulls the observation JSON, and computes over the web — 1 CAD bought 0.6217 EUR on 2026-09-29.
+Example ask: *"Compare CAD/EUR with CAD/JPY over the past week."* The skill resolves both series codes from the FX group catalog, pulls them in one combined observation call, and computes the weekly change over the web: from 2026-09-21 to 2026-09-29, CAD/EUR was essentially flat (0.6217 → 0.6217 EUR) while CAD/JPY fell 112.23 → 110.99 (−1.1%).
 
 Cite it as:
 
