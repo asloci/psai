@@ -34,11 +34,11 @@ Each skill is a plain folder with a `SKILL.md` inside. Copy the folder you want 
 Search the Open Canada catalog (~48,000 datasets from 352 departments) with the CKAN Action API, then query a chosen CSV or JSON resource in place.
 
 ```bash
-# Datasets with at least one HTML resource, counted per department (nothing transferred)
-curl -s 'https://open.canada.ca/data/en/api/3/action/package_search?q=&fq=res_format:HTML&facet.field=%5B%22organization%22%5D&rows=0' | jq '.result.count, .result.facets.organization'
+# Datasets published in the last 12 months, counted per resource format (nothing transferred)
+curl -s 'https://open.canada.ca/data/en/api/3/action/package_search?q=&fq=metadata_created:%5B2025-10-01T00:00:00Z%20TO%20*%5D&facet.field=%5B%22res_format%22%5D&rows=0' | jq '.result.count, .result.facets.res_format'
 ```
 
-Example ask: *"Which departments publish the most HTML, compared to CSV or JSON?"* The skill counts each format with one call (verified 2026-10-01: 32,367 datasets carry an HTML resource, 15,792 a CSV, 401 a JSON), then reads the organization facet for the ranking: Statistics Canada tops HTML and CSV (8,981 and 8,450), while Yukon (2,919), Alberta (2,893), and Health Canada (2,822) publish almost exclusively HTML.
+Example ask: *"Of the datasets published in the last 12 months, how many are machine-readable CSV versus Excel, PDF, or ZIP?"* The skill counts them with one facet call over a metadata_created date range (verified 2026-10-01: 2,767 datasets published since 2025-10-01, of which 703 carry a CSV, 101 an XLSX, 99 a ZIP — and 1,013 a PDF). PDFs out-publish CSVs more than 1.4-to-1 among new datasets: most of what government releases is still not machine-readable (a dataset can carry several formats, so counts overlap).
 
 Cite it as:
 
@@ -72,13 +72,14 @@ Statistics Canada. "<Cube title>" (table NN-NN-NNNN-01) [dataset]. Statistics Ca
 Browse the Valet series and group catalogs (~18,500 entries: exchange rates, interest rates, commodity price indices, money-market statistics), fetch a series by date range or latest N, and read the JSON in place with DuckDB. GET only, no API key. Valet matches by exact series code, so the skill finds your code in the catalog first.
 
 ```sql
--- CAD/EUR vs CAD/JPY, past week, both series in one combined call
-SELECT u.d AS date, u.FXCADEUR.v AS cad_to_eur, u.FXCADJPY.v AS cad_to_jpy
+-- CAD vs EUR, JPY, CNY and USD, past week, all four series in one combined call
+SELECT u.d AS date, u.FXCADEUR.v AS cad_to_eur, u.FXCADJPY.v AS cad_to_jpy,
+       u.FXCADCNY.v AS cad_to_cny, u.FXCADUSD.v AS cad_to_usd
 FROM (SELECT unnest(observations) AS u
-      FROM read_json_auto('https://www.bankofcanada.ca/valet/observations/FXCADEUR,FXCADJPY/json?recent=7'));
+      FROM read_json_auto('https://www.bankofcanada.ca/valet/observations/FXCADEUR,FXCADJPY,FXCADCNY,FXCADUSD/json?recent=7'));
 ```
 
-Example ask: *"Compare CAD/EUR with CAD/JPY over the past week."* The skill resolves both series codes from the FX group catalog, pulls them in one combined observation call, and computes the weekly change over the web: from 2026-09-21 to 2026-09-29, CAD/EUR was essentially flat (0.6217 → 0.6217 EUR) while CAD/JPY fell 112.23 → 110.99 (−1.1%).
+Example ask: *"How did the Canadian dollar move against the euro, yen, yuan, and US dollar this past week?"* The skill resolves all four series codes from the FX group catalog, pulls them in one combined observation call, and computes the weekly change over the web: from 2026-09-21 to 2026-09-29, CAD held flat against the euro (0.6217 → 0.6217 EUR) while slipping against the US dollar (0.7132 → 0.7048, −1.2%), the yuan (4.7755 → 4.7237, −1.1%), and the yen (112.23 → 110.99, −1.1%).
 
 Cite it as:
 
