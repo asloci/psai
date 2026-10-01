@@ -1,3 +1,8 @@
+# Builds the catalog cache on GitHub's servers each night (08:30 UTC) and on
+# manual dispatch, and publishes it as a release asset. Never touches any
+# local machine. To switch to manual-only, disable this workflow in the
+# Actions tab or remove the schedule lines below.
+
 name: catalog-cache
 
 on:
